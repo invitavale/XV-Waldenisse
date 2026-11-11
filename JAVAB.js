@@ -703,7 +703,7 @@ function setupScrollReveal() {
         { sel: '.countdown-item', cls: 'reveal-zoom', stagger: 0.12 },
         { sel: '.event-card > *', cls: '', stagger: 0.12 },
         { sel: '.camera-icon, .gift-icon, .whatsapp-icon', cls: 'reveal-zoom' },
-        { sel: '.carousel-container', cls: '' },
+        { sel: '.carousel-container, .mazo-fotos', cls: '' },
         { sel: '.carousel-counter', cls: '' },
         { sel: '.party-card', cls: '', stagger: 0.2, alt: true },
         { sel: '.gifts-container > .btn-wedding, .rsvp-container > .btn-wedding', cls: '' },
@@ -826,6 +826,104 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('scroll', alMover, { passive: true });
         window.addEventListener('resize', alMover);
         pintar();
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+    else iniciar();
+})();
+
+// =========================================================
+// Galería tipo mazo de cartas: la foto de adelante sale de lado
+// y se acomoda detrás del mazo. Avanza sola cada 3 segundos y
+// también al tocar o deslizar.
+// =========================================================
+(function mazoDeFotos() {
+    const iniciar = () => {
+        const mazo = document.getElementById('mazoFotos');
+        if (!mazo) return;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const total = mazo.children.length;
+        const giros = [0, 5, -6, 3, -4, 6, -3];
+        const contador = document.getElementById('currentSlide');
+        const totalEl = document.getElementById('totalSlides');
+        if (totalEl) totalEl.textContent = total;
+        let indice = 0, ocupado = false, lado = 1, temporizador = null;
+
+        const acomodar = () => {
+            const cartas = [...mazo.children];
+            cartas.forEach((c, i) => {
+                const desdeArriba = cartas.length - 1 - i;      // 0 = la de adelante
+                c.style.zIndex = String(i + 1);
+                c.style.setProperty('--giro', (giros[desdeArriba % giros.length]) + 'deg');
+                c.style.setProperty('--baja', Math.min(desdeArriba, 3) * 4 + 'px');
+                c.style.setProperty('--escala', (1 - Math.min(desdeArriba, 3) * 0.025).toFixed(3));
+                c.classList.toggle('es-frente', desdeArriba === 0);
+            });
+            if (contador) contador.textContent = String((indice % total) + 1);
+        };
+
+        const pasar = (direccion) => {
+            if (ocupado) return;
+            const frente = mazo.lastElementChild;
+            if (!frente) return;
+            ocupado = true;
+            lado = direccion || -lado;                           // alterna izquierda / derecha
+            frente.style.setProperty('--sale-x', (lado * 112) + '%');
+            frente.style.setProperty('--sale-giro', (lado * 14) + 'deg');
+            frente.classList.add('saliendo');
+            const t = reduce ? 0 : 480;
+            setTimeout(() => {
+                mazo.prepend(frente);                            // pasa al fondo del mazo
+                indice++;
+                acomodar();
+                frente.classList.remove('saliendo');             // regresa por detrás
+                setTimeout(() => { ocupado = false; }, reduce ? 0 : 520);
+            }, t);
+        };
+
+        // Cada foto se queda 3 s; la que tenga data-espera (la de XV) se queda más.
+        // Solo avanza cuando el mazo está a la vista.
+        let visible = false;
+        const programar = () => {
+            clearTimeout(temporizador);
+            if (!visible) return;
+            const frente = mazo.lastElementChild;
+            const espera = parseInt(frente && frente.dataset.espera, 10) || 2000;  // + 1 s de cambio = 3 s por foto, como antes
+            temporizador = setTimeout(() => {
+                if (!document.hidden && visible) pasar();
+                setTimeout(programar, reduce ? 0 : 1000);   // espera a que termine el cambio
+            }, espera);
+        };
+        const reiniciar = programar;
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver((entradas) => {
+                const ahora = entradas[0].isIntersecting;
+                if (ahora && !visible) { visible = true; programar(); }
+                else if (!ahora && visible) { visible = false; clearTimeout(temporizador); }
+            }, { threshold: 0.55 }).observe(mazo);
+        } else {
+            visible = true;
+        }
+
+        // Tocar o deslizar
+        let x0 = null, y0 = null;
+        mazo.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; });
+        mazo.addEventListener('pointerup', (e) => {
+            if (x0 === null) return;
+            const dx = e.clientX - x0, dy = e.clientY - y0;
+            x0 = null;
+            if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx)) return; // era scroll
+            pasar(Math.abs(dx) > 25 ? Math.sign(dx) : undefined);
+            reiniciar();
+        });
+        mazo.addEventListener('pointercancel', () => { x0 = null; });
+        mazo.tabIndex = 0;
+        mazo.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pasar(1); reiniciar(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); pasar(-1); reiniciar(); }
+        });
+
+        acomodar();
+        programar();
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
     else iniciar();
