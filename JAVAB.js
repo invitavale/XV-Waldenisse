@@ -555,8 +555,8 @@ function showGifts() {
 }
 
 function confirmAttendance() {
-    // Ejemplo: aquí se debe colocar el enlace real al formulario de Google Forms.
-    window.open('https://docs.google.com/forms/d/e/1FAIpQLSdIYoM33yAkMmS4DZCRVmO9_IE0gZT4eEw8cV0r2PgWlYE0Ag/viewform?usp=header', '_blank');
+    // Formulario de confirmación de asistencia (Google Forms)
+    window.open('https://docs.google.com/forms/d/e/1FAIpQLSeuj3q8uvuxtGI3yjSm5_OmU_T7Lalane2D9GB-41Til_Dz5g/viewform', '_blank');
 }
 
 // Sistema de Toast
