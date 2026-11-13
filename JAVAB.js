@@ -531,7 +531,7 @@ function openLocation(location) {
 
 function sharePhotos() {
     // Ejemplo: aquí se debe colocar el enlace real a la carpeta de Google Drive.
-    window.open('https://photos.app.goo.gl/p9PGQHWrvLG1Bpj28', '_blank');
+    window.open('https://photos.app.goo.gl/rjG2JPqgVW18hdpRA', '_blank');
 }
 
 function showDressCode() {
